@@ -352,12 +352,23 @@ def test_method_three():
     average_contacts = 2
     states = sir_simulator.simulate(initially_infected, time_infection, time_recover, transmission_probability, average_contacts)
 
-    render_states(states, "output.gif")
+    render_states(states, "output-1.gif")
     counts = states_to_counts(states)
-    render_counts("output.png", counts)
+    render_counts("output-1.png", counts)
+
+    initially_infected = 5
+    time_infection = 16
+    time_recover = 4
+    transmission_probability = 0.3
+    average_contacts = 8
+    states = sir_simulator.simulate(initially_infected, time_infection, time_recover, transmission_probability, average_contacts)
+
+    render_states(states, "output-2.gif")
+    counts = states_to_counts(states)
+    render_counts("output-2.png", counts)
 
 
 if __name__ == "__main__":
-    test_method_one()
-    test_method_two()
+    #test_method_one()
+    #test_method_two()
     test_method_three()

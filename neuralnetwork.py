@@ -6,16 +6,19 @@ from keras import optimizers
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+# Parameters.
 epochs = 50
 batch_size = 128
+model_types = ["dense", "lstm", "deeplstm", "gru", "deepgru"]
 
-def main():
-    # TODO Ensure dataset.
 
-    print("Loading dataset...")
+def train_neural_network():
+    """ Trains and evaluates a couple of neural networks. """
+
+    # Load the dataset.
     dataset = sir_dataset.load_dataset("dataset-counts-10000.p")
     sir_dataset.print_dataset_statistics(dataset)
-
     (train_input, train_output), (validate_input, validate_output), (test_input, test_output) = dataset
 
     # Normalize all input data.
@@ -32,8 +35,7 @@ def main():
     validate_output = (validate_output - minimum) / difference
     test_output = (test_output - minimum) / difference
 
-
-    model_types = ["dense", "lstm", "deeplstm", "gru", "deepgru"]
+    # Train the different models.
     for model_type in model_types:
 
         # Create the model.
@@ -56,6 +58,7 @@ def main():
 
 
 def create_model(model_type, input_shape, output_shape):
+    """ Creates a model of a given type. """
 
     model = models.Sequential()
 
@@ -94,7 +97,7 @@ def create_model(model_type, input_shape, output_shape):
 
 
 def plot_history(history, prefix):
-    """ Plots the history. """
+    """ Plots the history of a training. """
 
     # Render the accuracy.
     plt.plot(history.history['acc'])
@@ -115,8 +118,8 @@ def plot_history(history, prefix):
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig(prefix + "history_loss.png")
     plt.clf()
-    
+
 
 
 if __name__ == "__main__":
-    main()
+    train_neural_network()
