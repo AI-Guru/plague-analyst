@@ -4,27 +4,31 @@ import random
 import progressbar
 import imageio
 import pickle
-
+import scipy.ndimage
 
 
 STATE_SUSCEPTIBLE = 1
 STATE_INFECTED = 2
 STATE_RECOVERED = 3
-COLOR_SUSCEPTIBLE = (0.25, 0.5, 1.0)
-COLOR_INFECTED = (0.75, 0.0, 0.0)
-COLOR_RECOVERED = (0.75, 0.25, 1.0)
+COLOR_SUSCEPTIBLE = (1.0, 1.0, 0.0)
+COLOR_INFECTED = (1.0, 0.0, 0.0)
+COLOR_RECOVERED = (0.0, 1.0, 0.0)
 
 
-class SIRAutomaton:
+class SIRSimulator:
+    """ Simulates a epidemic. """
 
 
     def __init__(self, rows, columns, sequence_length):
+        """ Initializes the simulator. """
+
         self.rows = rows
         self.columns = columns
         self.sequence_length = sequence_length
 
 
     def generate_dataset(self, size, dataset_type, split_ratio, initially_infected, time_infection, time_recover, transmission_probability, average_contacts):
+        """ Generates a full dataset. This includes train, validate and test. """
 
         print("Generating data-set...")
 
@@ -51,7 +55,7 @@ class SIRAutomaton:
             if dataset_type == "states":
                 input_element = states
             elif dataset_type == "counts":
-                input_element = self.count_all_in_state_sequence(states)
+                input_element = states_to_counts(states)
             else:
                 raise Exception("Unknown type:", dataset_type)
             input_data.append(input_element)
@@ -79,6 +83,8 @@ class SIRAutomaton:
 
 
     def ensure_list(self, element):
+        """ Ensures that a provided element is a list. """
+
         if type(element) is list:
             return element
         else:
@@ -86,6 +92,7 @@ class SIRAutomaton:
 
 
     def simulate(self, initially_infected, time_infection, time_recover, transmission_probability, average_contacts):
+        """ Runs a full simulation with the provided set of parameters. """
 
         grid = self.create_grid(initially_infected, time_infection)
 
@@ -102,6 +109,7 @@ class SIRAutomaton:
 
 
     def create_grid(self, initially_infected, time_infection):
+        """ Creates a grid. """
 
         grid = np.zeros((self.rows, self.columns, 2))
 
@@ -126,11 +134,14 @@ class SIRAutomaton:
 
 
     def grid_to_state(self, grid):
-        state = np.array(grid[:,:,0])
+        """ Converts a grid to a state. """
+
+        state = np.array(grid[:,:,0]) # Drip the last element, which is times.
         return state
 
 
     def do_simulation_step(self, grid, time_infection, time_recover, transmission_probability, average_contacts):
+        """ Does one step of the simulation. """
 
         for row in range(grid.shape[0]):
             for column in range(grid.shape[1]):
@@ -169,101 +180,88 @@ class SIRAutomaton:
 
         return grid
 
-    def render_data(self, input_data, output_data):
 
-        print("Rendering animated gifs...")
-        bar = progressbar.ProgressBar(max_value=len(input_data))
-        for index, states in enumerate(input_data):
-            images = [self.state_to_image(state) for state in states]
-            path = "sequence-{}.gif".format(index)
-            imageio.mimsave(path, images)
-            bar.update(index)
-        bar.finish()
+def render_states(states, path):
+    """ Renders a sequence of states into an animated gif. """
 
-        print("Rendering diagrams...")
-        bar = progressbar.ProgressBar(max_value=len(input_data))
-        population_size = input_data.shape[2] * input_data.shape[3]
-        for index, states in enumerate(input_data):
-            path = "diagram-{}.png".format(index)
-            susceptible_counts = self.count_in_state_sequence(STATE_SUSCEPTIBLE, states) / population_size
-            infected_counts = self.count_in_state_sequence(STATE_INFECTED, states) / population_size
-            recovered_counts = self.count_in_state_sequence(STATE_RECOVERED, states) / population_size
-            self.render_sir(path, susceptible_counts, infected_counts, recovered_counts)
-            bar.update(index)
-        bar.finish()
+    print("Rendering states to ", path, "...")
+    images = [(state_to_image(state) * 255).astype("uint8") for state in states]
+    images = [scipy.ndimage.zoom(image, (4, 4, 1), order=0) for image in images]
+    imageio.mimsave(path, images, duration = 0.1)
 
 
-    def state_to_image(self, state):
-        image = np.zeros((state.shape[0], state.shape[1], 3))
-        for row in range(state.shape[0]):
-            for column in range(state.shape[1]):
-                if state[row, column] == STATE_SUSCEPTIBLE:
-                    color = COLOR_SUSCEPTIBLE
-                elif state[row, column] == STATE_INFECTED:
-                    color = COLOR_INFECTED
-                elif state[row, column] == STATE_RECOVERED:
-                    color = COLOR_RECOVERED
-                image[row, column] = color
-        return image
+def state_to_image(state):
+    """ Converts a state to a RGB-image. """
+
+    image = np.zeros((state.shape[0], state.shape[1], 3))
+    for row in range(state.shape[0]):
+        for column in range(state.shape[1]):
+            if state[row, column] == STATE_SUSCEPTIBLE:
+                color = COLOR_SUSCEPTIBLE
+            elif state[row, column] == STATE_INFECTED:
+                color = COLOR_INFECTED
+            elif state[row, column] == STATE_RECOVERED:
+                color = COLOR_RECOVERED
+            image[row, column] = color
+
+    return image
 
 
-    def count_in_state_sequence(self, state, sequence):
-        result = []
-        for element in sequence:
-            unique, counts = np.unique(element, return_counts=True)
-            dictionary = dict(zip(unique, counts))
-            count = dictionary.get(state, 0)
-            result.append(count)
-        result = np.array(result)
-        return result
+def states_to_counts(states):
+    """ Converts a sequence of states to a sequence of counts. """
 
-    def count_all_in_state_sequence(self, sequence):
-        result = []
-        for element in sequence:
-            unique, counts = np.unique(element, return_counts=True)
-            dictionary = dict(zip(unique, counts))
-            susceptible_count = dictionary.get(STATE_SUSCEPTIBLE, 0)
-            infected_count = dictionary.get(STATE_INFECTED, 0)
-            recovered_count = dictionary.get(STATE_RECOVERED, 0)
-            result.append((susceptible_count, infected_count, recovered_count))
-        result = np.array(result)
-        return result
+    result = []
+    for state in states:
+        unique, counts = np.unique(state, return_counts=True)
+        dictionary = dict(zip(unique, counts))
+        susceptible_count = dictionary.get(STATE_SUSCEPTIBLE, 0)
+        infected_count = dictionary.get(STATE_INFECTED, 0)
+        recovered_count = dictionary.get(STATE_RECOVERED, 0)
+        result.append((susceptible_count, infected_count, recovered_count))
 
+    result = np.array(result)
+    return result
 
 
 def render_dataset(dataset):
+    """ Renders a full dataset. """
 
     (train_input, train_output), (validate_input, validate_output), (test_input, test_output) = dataset
 
-    render_subset(train_input, train_output, "train")
-    render_subset(validate_input, validate_output, "validate")
-    render_subset(train_input, train_output, "test")
+    render_subset(train_input, "train")
+    render_subset(validate_input, "validate")
+    render_subset(train_input, "test")
 
 
-def render_subset(data_input, data_output, name):
+def render_subset(data_input, name):
+    """ Renders a subset of a dataset. """
 
-    population = np.sum(data_input[0][0])
-
-    for index in range(len(data_input)):
-        input_element = data_input[index]
-        output_element = data_output[index]
-
+    for index, input_element in enumerate(data_input):
         path = "diagram-{}-{}.png".format(name, index)
-        susceptible_counts = np.array(input_element[:, 0]) / population
-        infected_counts = np.array(input_element[:, 1]) / population
-        recovered_counts = np.array(input_element[:, 2]) / population
-        render_sir(path, susceptible_counts, infected_counts, recovered_counts)
+        render_counts(path, input_element)
 
 
-def render_sir(path, susceptible_counts, infected_counts, recovered_counts):
+def render_counts(path, data):
+    """ Renders a sequence of counts. """
 
-    t = range(len(susceptible_counts))
+    print("Rendering counts to", path, "...")
+
+    susceptible_counts = np.array(data[:, 0])
+    infected_counts = np.array(data[:, 1])
+    recovered_counts = np.array(data[:, 2])
+
+    population = susceptible_counts[0] + infected_counts[0] + recovered_counts[0]
+    susceptible_counts = susceptible_counts / population
+    infected_counts = infected_counts / population
+    recovered_counts = recovered_counts / population
+
+    time_steps = range(len(susceptible_counts))
 
     fig = plt.figure(facecolor='w')
-    ax = fig.add_subplot(111, axis_bgcolor='#dddddd', axisbelow=True)
-    ax.plot(t, susceptible_counts, 'b', alpha=0.5, lw=2, label='Susceptible')
-    ax.plot(t, infected_counts, 'r', alpha=0.5, lw=2, label='Infected')
-    ax.plot(t, recovered_counts, 'g', alpha=0.5, lw=2, label='Recovered with immunity')
+    ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+    ax.plot(time_steps, susceptible_counts, 'b', alpha=0.5, lw=2, label='Susceptible')
+    ax.plot(time_steps, infected_counts, 'r', alpha=0.5, lw=2, label='Infected')
+    ax.plot(time_steps, recovered_counts, 'g', alpha=0.5, lw=2, label='Recovered with immunity')
     ax.set_xlabel('Time /days')
     ax.set_ylabel('Number (1000s)')
     ax.set_ylim(0,1.2)
@@ -279,17 +277,25 @@ def render_sir(path, susceptible_counts, infected_counts, recovered_counts):
     plt.clf()
 
 
-def save_dataset(dataset, dataset_path):
-    pickle.dump(dataset, open(dataset_path, "wb"))
+def save_dataset(dataset, path):
+    """ Saves a dataset. """
+
+    print("Saving dataset to ", path, "..." )
+    pickle.dump(dataset, open(path, "wb"))
 
 
-def load_dataset(dataset_path):
-    dataset = pickle.load(open(dataset_path, "rb"))
+def load_dataset(path):
+    """ Loads a dataset. """
+
+    print("Loading dataset from ", path, "..." )
+    dataset = pickle.load(open(path, "rb"))
     (train_input, train_output), (validate_input, validate_output), (test_input, test_output) = dataset
     return dataset
 
 
 def print_dataset_statistics(dataset):
+    """ Prints the statistics of a dataset. """
+
     (train_input, train_output), (validate_input, validate_output), (test_input, test_output) = dataset
 
     print("train_input", train_input.shape)
@@ -300,14 +306,15 @@ def print_dataset_statistics(dataset):
     print("test_output", test_output.shape)
 
 
-# TODO make this a method
-def method_one():
-    sir_automaton = SIRAutomaton(20, 20, 50)
 
-    size = 10000
+def test_method_one():
+
+    sir_simulator = SIRSimulator(20, 20, 50)
+
+    size = 10
     dataset_type = "counts"
 
-    dataset = sir_automaton.generate_dataset(
+    dataset = sir_simulator.generate_dataset(
         size = size,
         split_ratio = "7:1:2",
         dataset_type = dataset_type,
@@ -324,9 +331,9 @@ def method_one():
     save_dataset(dataset, dataset_path)
 
 
+def test_method_two():
 
-def method_two():
-    size = 1000
+    size = 10
     dataset_type = "counts"
 
     dataset_path = "dataset-{}-{}.p".format(dataset_type, size)
@@ -335,6 +342,22 @@ def method_two():
     render_dataset(dataset)
 
 
+def test_method_three():
+    sir_simulator = SIRSimulator(50, 50, 100)
+
+    initially_infected = 5
+    time_infection = 2
+    time_recover = 4
+    transmission_probability = 0.4
+    average_contacts = 2
+    states = sir_simulator.simulate(initially_infected, time_infection, time_recover, transmission_probability, average_contacts)
+
+    render_states(states, "output.gif")
+    counts = states_to_counts(states)
+    render_counts("output.png", counts)
+
+
 if __name__ == "__main__":
-    method_one()
-    method_two()
+    test_method_one()
+    test_method_two()
+    test_method_three()
