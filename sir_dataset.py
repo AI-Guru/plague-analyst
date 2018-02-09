@@ -368,7 +368,15 @@ def test_method_three():
     render_counts("output-2.png", counts)
 
 
+def test_method_four():
+    dataset_path = "dataset-counts-10.p"
+    (train_input, train_output), _, _ = load_dataset(dataset_path)
+    print("train_input:", train_input[0][:10])
+    print("train_output:", train_output[0])
+
+
 if __name__ == "__main__":
     #test_method_one()
     #test_method_two()
-    test_method_three()
+    #test_method_three()
+    test_method_four()

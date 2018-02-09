@@ -69,7 +69,12 @@ And this code example shows how to generate a whole data-set with 10000 entries:
 
 ## Running
 
-
 To run the Neural Network training, just:
 
     python neuralnetwork.py
+
+This is how a dense network trains:
+![alt Dense.](https://github.com/AI-Guru/plague-analyst/blob/master/readme/plague-analyst-dense.jpg)
+
+This is how a deep-GRU network trains:
+![alt Deep GRU.](https://github.com/AI-Guru/plague-analyst/blob/master/readme/plague-analyst-deepgru.jpg)
