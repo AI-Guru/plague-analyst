@@ -2,29 +2,33 @@
 
 Deep Learning and diseases! Non-deadly ones...
 
+This is the git-repo for my blogpost. Read it if you want to know more!
+[Read the blog.](http://ai-guru.de/index.php/deep-learning-and-diseases/)
+
 ## Synopsis
 
 The plague-analyst shows two things:
-- Simulating epidemics based on the [SIR-model](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology).
-- Training Neural Networks that predict properties of diseases based on SIR-data.
+- How to simulate epidemics based on the [SIR-model](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology).
+- How to train Neural Networks that predict properties of diseases based on SIR-data.
 
-SIR stands for: Susceptible are people that can be infected, Infected are people that are ill, and Recovered are people that are currently immune. Diseases can be simulated with cellular automata.
+SIR stands for: **Susceptible** are people that can be infected, **Infected** are people that are ill and spread the disease, and **Recovered** are people that are currently immune.
 
-This project provides functionality to simulate the progression of diseases in order to create data-sets for Neural Network training.
+Diseases can be simulated with cellular automata. This project provides functionality to simulate the progression of diseases in order to create data-sets for Neural Network training.
 
-This is a picture of such an automaton over time. It shows how a disease spreads in a population:
-![alt text](https://github.com/AI-Guru/plague-analyst/blob/master/readme/output-1.gif)
-The green
+This is a picture of such a cellular automaton over time. It shows how a disease spreads in a population:
+![alt Cellular automaton.](https://github.com/AI-Guru/plague-analyst/blob/master/readme/output-1.gif)
 
 And this diagram shows the progression as a function:
-![alt text](https://github.com/AI-Guru/plague-analyst/blob/master/readme/output-1.png)
+![alt SIR diagram.](https://github.com/AI-Guru/plague-analyst/blob/master/readme/output-1.png)
 
 ## Code Example
 
 This code example shows how to run a single disease-simulation and render the outcome:
+
     import sir_dataset
 
-    sir_simulator = SIRSimulator(50, 50, 100)
+    sir_simulator = SIRSimulator(50, 50, 100) # width, height, timesteps
+
     initially_infected = 5
     time_infection = 2
     time_recover = 4
@@ -38,6 +42,7 @@ This code example shows how to run a single disease-simulation and render the ou
 
 
 And this code example shows how to generate a whole data-set with 10000 entries:
+
     import sir_dataset
 
     sir_simulator = SIRSimulator(20, 20, 50)
@@ -62,28 +67,9 @@ And this code example shows how to generate a whole data-set with 10000 entries:
     save_dataset(dataset, dataset_path)
 
 
-Show what the library does as concisely as possible, developers should be able to figure out **how** your project solves their problem by looking at the code example. Make sure the API you are showing off is obvious, and that your code is short and concise.
+## Running
 
-## Motivation
 
-A short description of the motivation behind the creation and maintenance of the project. This should explain **why** the project exists.
+To run the Neural Network training, just:
 
-## Installation
-
-Provide code examples and explanations of how to get the project.
-
-## API Reference
-
-Depending on the size of the project, if it is small and simple enough the reference docs can be added to the README. For medium size to larger projects it is important to at least provide a link to where the API reference docs live.
-
-## Tests
-
-Describe and show how to run the tests with code examples.
-
-## Contributors
-
-Let people know how they can dive into the project, include important links to things like issue trackers, irc, twitter accounts if applicable.
-
-## License
-
-A short snippet describing the license (MIT, Apache, etc.)
+    python neuralnetwork.py
